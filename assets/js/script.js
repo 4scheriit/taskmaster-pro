@@ -1,12 +1,13 @@
-var tasks = {};
+let tasks = {};
 
-var createTask = function(taskText, taskDate, taskList) {
+const createTask = (taskText, taskDate, taskList) =>
+{
   // create elements that make up a task item
-  var taskLi = $("<li>").addClass("list-group-item");
-  var taskSpan = $("<span>")
+  let taskLi = $("<li>").addClass("list-group-item");
+  let taskSpan = $("<span>")
     .addClass("badge badge-primary badge-pill")
     .text(taskDate);
-  var taskP = $("<p>")
+  let taskP = $("<p>")
     .addClass("m-1")
     .text(taskText);
 
@@ -18,12 +19,15 @@ var createTask = function(taskText, taskDate, taskList) {
   $("#list-" + taskList).append(taskLi);
 };
 
-var loadTasks = function() {
+const loadTasks = () =>
+{
   tasks = JSON.parse(localStorage.getItem("tasks"));
 
   // if nothing in localStorage, create a new object to track all task status arrays
-  if (!tasks) {
-    tasks = {
+  if (!tasks) 
+  {
+    tasks = 
+    {
       toDo: [],
       inProgress: [],
       inReview: [],
@@ -32,16 +36,19 @@ var loadTasks = function() {
   }
 
   // loop over object properties
-  $.each(tasks, function(list, arr) {
+  $.each(tasks, (list, arr) => 
+  {
     console.log(list, arr);
     // then loop over sub-array
-    arr.forEach(function(task) {
+    arr.forEach((task) =>
+    {
       createTask(task.text, task.date, list);
     });
   });
 };
 
-var saveTasks = function() {
+const saveTasks = () => 
+{
   localStorage.setItem("tasks", JSON.stringify(tasks));
 };
 
@@ -49,24 +56,28 @@ var saveTasks = function() {
 
 
 // modal was triggered
-$("#task-form-modal").on("show.bs.modal", function() {
+$("#task-form-modal").on("show.bs.modal", () =>
+{
   // clear values
   $("#modalTaskDescription, #modalDueDate").val("");
 });
 
 // modal is fully visible
-$("#task-form-modal").on("shown.bs.modal", function() {
+$("#task-form-modal").on("shown.bs.modal", () =>
+{
   // highlight textarea
   $("#modalTaskDescription").trigger("focus");
 });
 
 // save button in modal was clicked
-$("#task-form-modal .btn-primary").click(function() {
+$("#task-form-modal .btn-primary").click(() =>
+{
   // get form values
-  var taskText = $("#modalTaskDescription").val();
-  var taskDate = $("#modalDueDate").val();
+  let taskText = $("#modalTaskDescription").val();
+  let taskDate = $("#modalDueDate").val();
 
-  if (taskText && taskDate) {
+  if (taskText && taskDate) 
+  {
     createTask(taskText, taskDate, "toDo");
 
     // close modal
@@ -83,8 +94,9 @@ $("#task-form-modal .btn-primary").click(function() {
 });
 
 // remove all tasks
-$("#remove-tasks").on("click", function() {
-  for (var key in tasks) {
+$("#remove-tasks").on("click", () => 
+{
+  for (let key in tasks) {
     tasks[key].length = 0;
     $("#list-" + key).empty();
   }
