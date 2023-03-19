@@ -1,17 +1,20 @@
 let tasks = {};
 
-const createTask = (taskText, taskDate, taskList) => {
+let createTask = function (taskText, taskDate, taskList) {
   // create elements that make up a task item
-  let taskLi = $("<li>").addClass("list-group-item");
+  const taskLi = $("<li>").addClass("list-group-item");
 
-  let taskSpan = $("<span>")
+  const taskSpan = $("<span>")
     .addClass("badge badge-primary badge-pill")
     .text(taskDate);
 
-  let taskP = $("<p>").addClass("m-1").text(taskText);
+  const taskP = $("<p>").addClass("m-1").text(taskText);
 
   // append span and p element to parent li
   taskLi.append(taskSpan, taskP);
+
+  // check due date
+  auditTask(taskLi);
 
   // append to ul list on the page
   $("#list-" + taskList).append(taskLi);
@@ -45,9 +48,9 @@ const saveTasks = () => {
 };
 
 $(".list-group").on("click", "p", function () {
-  let text = $(this).text().trim();
+  const text = $(this).text().trim();
 
-  let textInput = $("<textarea>").addClass("form-control").val(text);
+  const textInput = $("<textarea>").addClass("form-control").val(text);
 
   $(this).replaceWith(textInput);
 
@@ -56,19 +59,19 @@ $(".list-group").on("click", "p", function () {
 
 $(".list-group").on("blur", "textarea", function () {
   // get the textarea's current value/text
-  let text = $(this).val();
+  const text = $(this).val();
 
   // get the parent ul's id attribute
-  let status = $(this).closest(".list-group").attr("id").replace("list-", "");
+  const status = $(this).closest(".list-group").attr("id").replace("list-", "");
 
   // get the task's position in the list of other li elements
-  let index = $(this).closest(".list-group-item").index();
+  const index = $(this).closest(".list-group-item").index();
 
   tasks[status][index].text = text;
   saveTasks();
 
   // recreate p element
-  let taskP = $("<p>").addClass("m-1").text(text);
+  const taskP = $("<p>").addClass("m-1").text(text);
 
   // replace textarea with p element
   $(this).replaceWith(taskP);
@@ -77,43 +80,54 @@ $(".list-group").on("blur", "textarea", function () {
 // due date was clicked
 $(".list-group").on("click", "span", function () {
   // get current text
-  let date = $(this).text().trim();
+  const date = $(this).text().trim();
 
   // create new input element
-  let dateInput = $("<input>")
+  const dateInput = $("<input>")
     .attr("type", "text")
     .addClass("form-control")
     .val(date);
 
-  // swap out elements
   $(this).replaceWith(dateInput);
 
-  // automatically focus on new element
+  // enable jquery ui datepicker
+  dateInput.datepicker({
+    minDate: 1,
+    onClose: function () {
+      // when calendar is closed, force a "change" event on the `dateInput`
+      $(this).trigger("change");
+    },
+  });
+
+  // automatically bring up the calendar
   dateInput.trigger("focus");
 });
 
 // value of due date was changed
-$(".list-group").on("blur", "input[type='text']", function () {
+$(".list-group").on("change", "input[type='text']", function () {
   // get current text
-  let date = $(this).val().trim();
+  const date = $(this).val().trim();
 
   // get the parent ul's id attribute
-  let status = $(this).closest(".list-group").attr("id").replace("list-", "");
+  const status = $(this).closest(".list-group").attr("id").replace("list-", "");
 
   // get the task's position in the list of other li elements
-  let index = $(this).closest(".list-group-item").index();
+  const index = $(this).closest(".list-group-item").index();
 
   // update task in array and re-save to localstorage
   tasks[status][index].date = date;
   saveTasks();
 
   // recreate span element with bootstrap classes
-  let taskSpan = $("<span>")
+  const taskSpan = $("<span>")
     .addClass("badge badge-primary badge-pill")
     .text(date);
 
   // replace input with span element
   $(this).replaceWith(taskSpan);
+
+  // Pass task's <li> element into auditTask() to check new due date
+  auditTask($(taskSpan).closest(".list-group-item"));
 });
 
 // modal was triggered
@@ -131,8 +145,8 @@ $("#task-form-modal").on("shown.bs.modal", () => {
 // save button in modal was clicked
 $("#task-form-modal .btn-primary").click(() => {
   // get form values
-  let taskText = $("#modalTaskDescription").val();
-  let taskDate = $("#modalDueDate").val();
+  const taskText = $("#modalTaskDescription").val();
+  const taskDate = $("#modalDueDate").val();
 
   if (taskText && taskDate) {
     createTask(taskText, taskDate, "toDo");
@@ -152,7 +166,7 @@ $("#task-form-modal .btn-primary").click(() => {
 
 // remove all tasks
 $("#remove-tasks").on("click", () => {
-  for (let key in tasks) {
+  for (const key in tasks) {
     tasks[key].length = 0;
     $("#list-" + key).empty();
   }
@@ -179,15 +193,15 @@ $(".card .list-group").sortable({
   },
   update: function (event) {
     // array to store the task data in
-    var tempArr = [];
+    const tempArr = [];
 
     // loop over current set of children in sortable list
     $(this)
       .children()
       .each(function () {
-        let text = $(this).find("p").text().trim();
+        const text = $(this).find("p").text().trim();
 
-        let date = $(this).find("span").text().trim();
+        const date = $(this).find("span").text().trim();
 
         // add task data to the temp array as an object
         tempArr.push({
@@ -197,7 +211,7 @@ $(".card .list-group").sortable({
       });
 
     // trim down list's ID to match object property
-    let arrName = $(this).attr("id").replace("list-", "");
+    const arrName = $(this).attr("id").replace("list-", "");
 
     // update array on tasks object and save
     tasks[arrName] = tempArr;
@@ -220,6 +234,30 @@ $("#trash").droppable({
     console.log("out");
   },
 });
+
+//create a calendar
+$("#modalDueDate").datepicker({
+  minDate: 1,
+});
+
+//function to audit the tasks
+const auditTask = function (taskEl) {
+  // get date from task element
+  const date = $(taskEl).find("span").text().trim();
+
+  // convert to moment object at 5:00pm
+  const time = moment(date, "L").set("hour", 17);
+
+  // remove any old classes from element
+  $(taskEl).removeClass("list-group-item-warning list-group-item-danger");
+
+  // apply new class if task is near/over due date
+  if (moment().isAfter(time)) {
+    $(taskEl).addClass("list-group-item-danger");
+  } else if (Math.abs(moment().diff(time, "days")) <= 2) {
+    $(taskEl).addClass("list-group-item-warning");
+  }
+};
 
 // load tasks for the first time
 loadTasks();
